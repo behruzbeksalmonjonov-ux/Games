@@ -1,0 +1,91 @@
+const canvas = document.getElementById("pong");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 10, y: canvas.height/2 - 50, width: 10, height: 100, score: 0 };
+let ai = { x: canvas.width - 20, y: canvas.height/2 - 50, width: 10, height: 100, score: 0 };
+let ball = { x: canvas.width/2, y: canvas.height/2, radius: 10, speed: 4, dx: 4, dy: 4 };
+
+document.addEventListener("mousemove", (e) => {
+    let rect = canvas.getBoundingClientRect();
+    player.y = e.clientY - rect.top - player.height/2;
+});
+
+function drawRect(x, y, w, h, color){
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+}
+
+function drawCircle(x, y, r, color){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2, false);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawText(text, x, y){
+    ctx.fillStyle = "#fff";
+    ctx.font = "32px Arial";
+    ctx.fillText(text, x, y);
+}
+
+function resetBall(){
+    ball.x = canvas.width/2;
+    ball.y = canvas.height/2;
+    ball.dx = -ball.dx;
+    ball.speed = 4;
+}
+
+function collision(b, p){
+    return b.x - b.radius < p.x + p.width &&
+           b.x + b.radius > p.x &&
+           b.y - b.radius < p.y + p.height &&
+           b.y + b.radius > p.y;
+}
+
+function update(){
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // AI harakati
+    ai.y += (ball.y - (ai.y + ai.height/2)) * 0.05;
+
+    // To‘p devorga urilishi
+    if(ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height){
+        ball.dy = -ball.dy;
+    }
+
+    // Player bilan to‘qnashuv
+    let playerOrAI = (ball.x < canvas.width/2) ? player : ai;
+    if(collision(ball, playerOrAI)){
+        ball.dx = -ball.dx;
+        ball.speed += 0.2;
+    }
+
+    // Gol
+    if(ball.x - ball.radius < 0){
+        ai.score++;
+        document.getElementById("ai-score").innerText = ai.score;
+        resetBall();
+    } else if(ball.x + ball.radius > canvas.width){
+        player.score++;
+        document.getElementById("player-score").innerText = player.score;
+        resetBall();
+    }
+}
+
+function render(){
+    drawRect(0, 0, canvas.width, canvas.height, "#000");
+    drawRect(player.x, player.y, player.width, player.height, "#fff");
+    drawRect(ai.x, ai.y, ai.width, ai.height, "#fff");
+    drawCircle(ball.x, ball.y, ball.radius, "#05edff");
+    drawText(player.score, canvas.width/4, 50);
+    drawText(ai.score, 3*canvas.width/4, 50);
+}
+
+function game(){
+    update();
+    render();
+}
+
+setInterval(game, 1000/60);
